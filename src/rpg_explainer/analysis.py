@@ -70,6 +70,17 @@ class RPGProcedure:
 
 
 @dataclass
+class RPGFixedSpec:
+    """Represents a fixed-form specification line."""
+
+    spec_type: str  # H, F, D, C, P, or *
+    raw_line: str
+    # Parsed fields (populated by spec-specific parsing)
+    name: str | None = None
+    keywords: dict[str, str] = field(default_factory=dict)
+
+
+@dataclass
 class RPGFile:
     """Represents a parsed RPG source file with extracted information."""
 
@@ -80,6 +91,12 @@ class RPGFile:
     constants: list[RPGConstant] = field(default_factory=list)
     data_structures: list[RPGDataStructure] = field(default_factory=list)
     prototypes: list[str] = field(default_factory=list)
+    # Fixed-form specs (for programs with fixed-form code)
+    fixed_h_specs: list[RPGFixedSpec] = field(default_factory=list)
+    fixed_f_specs: list[RPGFixedSpec] = field(default_factory=list)
+    fixed_d_specs: list[RPGFixedSpec] = field(default_factory=list)
+    fixed_c_specs: list[RPGFixedSpec] = field(default_factory=list)
+    fixed_p_specs: list[RPGFixedSpec] = field(default_factory=list)
 
 
 @dataclass
@@ -271,7 +288,172 @@ class RPGAnalyzer:
             if proc:
                 rpg_file.procedures.append(proc)
 
+        # Extract fixed-form specs
+        self._extract_fixed_form_specs(rpg_file, root, source)
+
         return rpg_file
+
+    def _extract_fixed_form_specs(
+        self, rpg_file: RPGFile, root: Node, source: str
+    ) -> None:
+        """Extract fixed-form specification lines."""
+        # H specs (Header/Control)
+        for node in find_nodes_by_type(root, "fixed_h_spec"):
+            spec = self._parse_fixed_spec("H", node, source)
+            if spec:
+                rpg_file.fixed_h_specs.append(spec)
+
+        # F specs (File)
+        for node in find_nodes_by_type(root, "fixed_f_spec"):
+            spec = self._parse_fixed_f_spec(node, source)
+            if spec:
+                rpg_file.fixed_f_specs.append(spec)
+                # Also add to file_defs for consistency
+                if spec.name:
+                    rpg_file.file_defs.append(
+                        RPGFileDef(name=spec.name, keywords=spec.keywords)
+                    )
+
+        # D specs (Definition)
+        for node in find_nodes_by_type(root, "fixed_d_spec"):
+            spec = self._parse_fixed_d_spec(node, source)
+            if spec:
+                rpg_file.fixed_d_specs.append(spec)
+
+        # C specs (Calculation)
+        for node in find_nodes_by_type(root, "fixed_c_spec"):
+            spec = self._parse_fixed_c_spec(node, source)
+            if spec:
+                rpg_file.fixed_c_specs.append(spec)
+
+        # P specs (Procedure)
+        for node in find_nodes_by_type(root, "fixed_p_spec"):
+            spec = self._parse_fixed_spec("P", node, source)
+            if spec:
+                rpg_file.fixed_p_specs.append(spec)
+
+    def _parse_fixed_spec(
+        self, spec_type: str, node: Node, source: str
+    ) -> RPGFixedSpec | None:
+        """Parse a basic fixed-form spec line."""
+        raw_line = node_text(node, source)
+        if not raw_line:
+            return None
+        return RPGFixedSpec(spec_type=spec_type, raw_line=raw_line)
+
+    def _parse_fixed_f_spec(self, node: Node, source: str) -> RPGFixedSpec | None:
+        """Parse a fixed-form F (File) specification.
+
+        F spec layout (columns 1-80):
+        - Col 6: F (spec type)
+        - Col 7-16: File name (10 chars)
+        - Col 17: File type (I/O/U/C)
+        - Col 18: File designation
+        - Col 19-20: End of file (E or blank)
+        - Col 21: File addition (A or blank)
+        - Col 22: Sequence (A/D/blank)
+        - Col 23-27: Record length
+        - Col 28-32: Limits processing
+        - Col 33-34: Length of key or record address
+        - Col 35: Record address type
+        - Col 36-42: File organization/device
+        - Col 43-80: Keywords
+        """
+        raw_line = node_text(node, source)
+        if not raw_line or len(raw_line) < 17:
+            return None
+
+        # Extract file name (columns 7-16, 0-indexed: 6-15)
+        name = raw_line[6:16].strip() if len(raw_line) > 6 else None
+
+        # Skip comment lines
+        if name and name.startswith("*"):
+            return RPGFixedSpec(spec_type="F", raw_line=raw_line, name=None)
+
+        return RPGFixedSpec(spec_type="F", raw_line=raw_line, name=name)
+
+    def _parse_fixed_d_spec(self, node: Node, source: str) -> RPGFixedSpec | None:
+        """Parse a fixed-form D (Definition) specification.
+
+        D spec layout (columns 1-80):
+        - Col 6: D (spec type)
+        - Col 7-21: Name (15 chars)
+        - Col 22: External description (E or blank)
+        - Col 23: Data structure type (DS, S, C, etc.)
+        - Col 24-25: Definition type
+        - Col 26-32: From position
+        - Col 33-39: To position / length
+        - Col 40-41: Data type
+        - Col 42-44: Decimal positions
+        - Col 45-80: Keywords
+        """
+        raw_line = node_text(node, source)
+        if not raw_line or len(raw_line) < 22:
+            return None
+
+        # Extract name (columns 7-21, 0-indexed: 6-20)
+        name = raw_line[6:21].strip() if len(raw_line) > 6 else None
+
+        # Skip comment lines
+        if name and name.startswith("*"):
+            return RPGFixedSpec(spec_type="D", raw_line=raw_line, name=None)
+
+        return RPGFixedSpec(spec_type="D", raw_line=raw_line, name=name)
+
+    def _parse_fixed_c_spec(self, node: Node, source: str) -> RPGFixedSpec | None:
+        """Parse a fixed-form C (Calculation) specification.
+
+        C spec layout (columns 1-80):
+        - Col 6: C (spec type)
+        - Col 7-8: Control level (01-99, LR, etc.)
+        - Col 9-11: Indicators
+        - Col 12-25: Factor 1 (14 chars)
+        - Col 26-35: Operation code (10 chars)
+        - Col 36-49: Factor 2 (14 chars)
+        - Col 50-63: Result field (14 chars)
+        - Col 64-68: Field length
+        - Col 69-70: Decimal positions
+        - Col 71-76: Resulting indicators
+        - Col 77-80: Comments
+        """
+        raw_line = node_text(node, source)
+        if not raw_line or len(raw_line) < 7:
+            return None
+
+        # Skip comment lines (C* in column 6-7)
+        if len(raw_line) > 6 and raw_line[6] == "*":
+            return RPGFixedSpec(spec_type="C", raw_line=raw_line, name=None)
+
+        # Extract operation code (columns 26-35, 0-indexed: 25-34)
+        opcode = ""
+        if len(raw_line) > 25:
+            opcode = (
+                raw_line[25:35].strip().upper()
+                if len(raw_line) > 34
+                else raw_line[25:].strip().upper()
+            )
+
+        # For lines without explicit opcode, check Factor 2 for operations like DSPLY
+        # Factor 2 is columns 36-49 (0-indexed: 35-48)
+        factor2 = ""
+        if len(raw_line) > 35:
+            factor2 = (
+                raw_line[35:49].strip() if len(raw_line) > 48 else raw_line[35:].strip()
+            )
+
+        # If no opcode but factor2 contains something like 'dsply', it's likely the operation
+        if not opcode and factor2:
+            # Check if factor2 looks like an operation (all alpha)
+            if factor2.isalpha():
+                opcode = factor2.upper()
+
+        # The "name" for C specs is the operation code
+        return RPGFixedSpec(
+            spec_type="C",
+            raw_line=raw_line,
+            name=opcode if opcode else None,
+            keywords={"opcode": opcode} if opcode else {},
+        )
 
     def _extract_file_def(self, node: Node, source: str) -> RPGFileDef | None:
         """Extract a file definition."""

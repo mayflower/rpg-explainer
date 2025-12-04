@@ -45,6 +45,7 @@ htmlcov/
 tree-sitter-rpg/node_modules/
 tree-sitter-rpg/src/
 tree-sitter-rpg/bindings/
+tree-sitter-rpg/package-lock.json
 
 # Build output
 build/languages.so
@@ -52,3 +53,18 @@ build/languages.so
 # Environment files
 .env
 .env.local
+
+# Claude
+CLAUDE.md
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+
+# External example repositories (cloned separately)
+examples/IBM-i-RPG-Free-CLP-Code/
+examples/rpg-examples/

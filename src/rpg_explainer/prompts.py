@@ -19,7 +19,7 @@ Your task is to provide a comprehensive, well-organized explanation of this RPG 
 ## Program Index (JSON)
 
 {program_index_json}
-
+{source_code_section}
 ## Instructions
 
 Please provide a markdown-formatted report that includes:
@@ -33,11 +33,24 @@ Describe the overall structure:
 - How procedures relate to each other (call graph)
 - Key data flows
 
+**IMPORTANT**: Include a Mermaid diagram to visualize the program structure.
+Use flowchart diagrams for program flow and component relationships.
+
+Example (adapt to actual program structure):
+```mermaid
+flowchart TD
+    A[Main Entry] --> B[Procedure 1]
+    B --> C[Procedure 2]
+    B --> D[(Database File)]
+```
+
 ### 3. File Dependencies
 For each file (DCL-F) used:
 - Explain its likely purpose based on the name and usage attributes
 - Note whether it's used for input, output, update, or delete operations
 - Identify which procedures access each file
+
+If there are multiple files with relationships, include a Mermaid ER diagram showing the data model.
 
 ### 4. External Dependencies
 List and explain:
@@ -51,11 +64,40 @@ For each significant procedure:
 - Input/output parameters
 - Internal logic summary (based on calls and file usage)
 
-### 6. Risk Assessment
-Highlight any:
-- File update/delete operations that could affect data integrity
-- External calls that might have side effects
-- Complex logic patterns that warrant attention
+### 6. Detailed Functionality Analysis
+Provide an in-depth explanation of:
+
+#### Business Logic & Rules
+- What business rules are encoded in this program?
+- What validations or constraints are enforced?
+- What calculations or transformations are performed?
+- What conditions drive different processing paths?
+
+#### Data Entities & Structures
+- What business entities does this program work with (customers, orders, invoices, etc.)?
+- How are these entities represented in the data structures?
+- What relationships exist between entities?
+- What are the key fields and their business meaning?
+
+#### Processing Flow
+- Step-by-step explanation of the main processing logic
+- What triggers this program to run?
+- What is the expected input and output?
+- What state changes occur during execution?
+
+**IMPORTANT**: Include a Mermaid flowchart or sequence diagram to visualize the processing flow.
+Choose the most appropriate diagram type:
+
+- For sequential/loop processing: Use a flowchart (flowchart TD) with decision nodes
+- For component interactions: Use a sequence diagram showing message flow between participants
+- For state changes: Use a state diagram if appropriate
+
+Create diagrams that accurately reflect THIS program's specific logic, not generic examples.
+
+#### Integration Points
+- How does this program fit into the larger business process?
+- What upstream processes provide data to this program?
+- What downstream processes consume this program's output?
 
 ### 7. Recommendations
 Suggest any:
@@ -65,6 +107,7 @@ Suggest any:
 
 Be specific and reference procedure names, file names, and other identifiers from the analysis.
 Use proper markdown formatting with headers, bullet points, and code blocks where appropriate.
+Use Mermaid diagrams wherever they help clarify program flow, data relationships, or system interactions.
 """
 
 PROCEDURE_FOCUS_PROMPT = """You are a senior IBM i / RPGLE architect with deep expertise in RPG programming.

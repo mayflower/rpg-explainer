@@ -152,11 +152,14 @@ def main(
     # Generate LLM explanation
     print_progress("Calling Claude LLM for explanation...")
 
+    # Collect source files for the LLM
+    source_files = {pf.path: pf.source for pf in parsed_files}
+
     try:
         from .llm_client import RPGExplainerLLM
 
         llm = RPGExplainerLLM(model=model)
-        report = llm.explain_program(index)
+        report = llm.explain_program(index, source_files=source_files)
     except ValueError as e:
         print_error(str(e))
         sys.exit(1)

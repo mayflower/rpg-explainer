@@ -22,9 +22,22 @@ function ci(keyword) {
 module.exports = grammar({
   name: 'rpg',
 
+  externals: $ => [
+    $.fixed_h_line,
+    $.fixed_f_line,
+    $.fixed_d_line,
+    $.fixed_c_line,
+    $.fixed_p_line,
+    $.fixed_comment_line,
+    $.free_directive,
+    $._newline,  // Scanner handles newlines based on mode
+  ],
+
   extras: $ => [
-    /\s/,
+    // Horizontal whitespace only - scanner handles newlines
+    /[ \t]+/,
     $.comment,
+    $._newline,  // Scanner-produced newline token (skipped as extra)
   ],
 
   word: $ => $.identifier,
@@ -34,6 +47,15 @@ module.exports = grammar({
     source_file: $ => repeat($._item),
 
     _item: $ => choice(
+      // Fixed-form specs (from external scanner)
+      $.fixed_h_spec,
+      $.fixed_f_spec,
+      $.fixed_d_spec,
+      $.fixed_c_spec,
+      $.fixed_p_spec,
+      $.fixed_comment_line,
+      $.free_directive,
+      // Free-form declarations and statements
       $.procedure_definition,
       $.file_definition,
       $.data_structure_definition,
@@ -51,6 +73,13 @@ module.exports = grammar({
       $.return_statement,
       $.simple_statement
     ),
+
+    // Fixed-form spec wrappers (external scanner provides the line content)
+    fixed_h_spec: $ => $.fixed_h_line,
+    fixed_f_spec: $ => $.fixed_f_line,
+    fixed_d_spec: $ => $.fixed_d_line,
+    fixed_c_spec: $ => $.fixed_c_line,
+    fixed_p_spec: $ => $.fixed_p_line,
 
     // Control options: ctl-opt ... ;
     ctl_opt: $ => seq(

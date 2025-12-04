@@ -46,19 +46,32 @@ class RPGExplainerLLM:
             max_tokens=8192,
         )
 
-    def explain_program(self, index: ProgramIndex) -> str:
+    def explain_program(
+        self, index: ProgramIndex, source_files: dict[str, str] | None = None
+    ) -> str:
         """Generate a comprehensive explanation of an RPG program.
 
         Args:
             index: The ProgramIndex containing analyzed program information.
+            source_files: Optional dict mapping file paths to their source code.
 
         Returns:
             A markdown-formatted explanation of the program.
         """
         program_json = index.to_json(indent=2)
 
+        # Build source code section if provided
+        source_section = ""
+        if source_files:
+            source_section = "\n\n## Raw Source Code\n\n"
+            for path, source in source_files.items():
+                source_section += f"### {path}\n\n```rpgle\n{source}\n```\n\n"
+
         # Build the prompt
-        prompt = SUMMARY_PROMPT.format(program_index_json=program_json)
+        prompt = SUMMARY_PROMPT.format(
+            program_index_json=program_json,
+            source_code_section=source_section,
+        )
 
         # Create messages
         messages = [

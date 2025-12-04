@@ -1,0 +1,10 @@
+{
+  "name": "tree-sitter-rpg",
+  "version": "0.1.0",
+  "main": "index.js",
+  "keywords": ["tree-sitter", "rpg", "ile rpg", "rpgle"],
+  "license": "MIT",
+  "dependencies": {
+    "tree-sitter-cli": "^0.24.0"
+  }
+}

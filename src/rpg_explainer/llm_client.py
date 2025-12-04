@@ -15,8 +15,7 @@ if TYPE_CHECKING:
     from .analysis import ProgramIndex, RPGProcedure
 
 # Default model - Claude Opus 4.5
-# Update this to the actual model ID when available
-DEFAULT_MODEL = "claude-opus-4-5-20250514"
+DEFAULT_MODEL = "claude-opus-4-5-20251101"
 
 
 class RPGExplainerLLM:
@@ -90,9 +89,7 @@ class RPGExplainerLLM:
             A markdown-formatted explanation of the procedure.
         """
         # Format parameters
-        params_str = ", ".join(
-            f"{p.name}: {p.type or 'unknown'}" for p in procedure.params
-        )
+        params_str = ", ".join(f"{p.name}: {p.type or 'unknown'}" for p in procedure.params)
         if not params_str:
             params_str = "None"
 

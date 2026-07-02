@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 import click
+from dotenv import load_dotenv
 
 from . import __version__
 
@@ -78,6 +79,10 @@ def main(
 
         rpg-explain program.rpgle --json > index.json
     """
+    # Load variables from a .env file (e.g. ANTHROPIC_API_KEY) if present.
+    # Values already set in the environment take precedence and are not overridden.
+    load_dotenv()
+
     # Check if Tree-sitter library is built
     if not check_treesitter_library():
         print_error("Tree-sitter RPG library not found.")

@@ -54,10 +54,18 @@ See [examples.md](examples.md) for complete analysis examples.
    pip install -e .
    ```
 
-4. Set your Anthropic API key:
+4. Set your Anthropic API key, either as a shell environment variable:
    ```bash
    export ANTHROPIC_API_KEY=your-api-key-here
    ```
+
+   ...or in a `.env` file in the project root (loaded automatically on startup):
+   ```bash
+   echo "ANTHROPIC_API_KEY=your-api-key-here" > .env
+   ```
+
+   Variables already set in the shell environment take precedence over the
+   `.env` file. The `.env` file is git-ignored, so your key won't be committed.
 
 ## Usage
 
@@ -160,7 +168,7 @@ pytest --cov=rpg_explainer
 
 | Variable | Description | Required |
 |----------|-------------|----------|
-| `ANTHROPIC_API_KEY` | Your Anthropic API key | Yes |
+| `ANTHROPIC_API_KEY` | Your Anthropic API key (via shell export or a `.env` file) | Yes |
 | `RPG_TREESITTER_LIB` | Custom path to compiled Tree-sitter library | No (defaults to `build/languages.so`) |
 
 ## How It Works
